@@ -1,0 +1,27 @@
+version: "3.7"
+
+services:
+
+  jenkins:
+    build: .
+    container_name: jenkins
+    restart: unless-stopped
+    privileged: true
+    user: root
+    networks:
+      - traefik
+    ports:
+      - 8880:8080
+      - 50000:50000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/local/bin/docker:/usr/local/bin/docker
+      - $OMV_DIR/appdata/jenkins/data:/var/jenkins_home
+
+networks:
+  traefik:
+    name: traefik
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.90.0/24

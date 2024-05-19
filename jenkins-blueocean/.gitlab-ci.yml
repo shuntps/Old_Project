@@ -1,0 +1,15 @@
+stages:
+  - deploy
+
+deploy-jenkins-blueocean:
+  image: tmaier/docker-compose
+  stage: deploy
+  variables:
+    DOCKER_HOST: $DOCKER_HOST
+    DOCKER_TLS_CERTDIR: ""
+  tags:
+    - omv-test-docker
+  script:
+    - docker-compose up -d --build
+  only:
+    - master

@@ -1,0 +1,28 @@
+version: "3.7"
+
+services:
+
+  jenkins-blueocean:
+    build: .
+    container_name: jenkins-blueocean
+    restart: unless-stopped
+    privileged: true
+    user: root
+    environment:
+      - DOCKER_HOST=$DOCKER_HOST
+    networks:
+      - traefik
+    ports:
+      - 8081:8080
+      - 50000:50000
+    volumes:
+      - $OMV_DIR/appdata/jenkins-blueocean/certs:/certs/client:ro
+      - $OMV_DIR/appdata/jenkins-blueocean/data:/var/jenkins_home
+
+networks:
+  traefik:
+    name: traefik
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.90.0/24

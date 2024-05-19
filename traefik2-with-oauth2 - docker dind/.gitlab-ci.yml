@@ -1,0 +1,16 @@
+stages:
+  - deploy
+
+deploy-traefik:
+  image: tmaier/docker-compose
+  stage: deploy
+  variables:
+    DOCKER_TLS_CERTDIR: "/cert"
+  services:
+    - docker:dind
+  tags:
+    - omv-test-docker
+  script:
+    - docker-compose up -d --build
+  only:
+    - master

@@ -1,0 +1,16 @@
+image: docker/compose:latest
+
+variables:
+  DOCKER_HOST: $DOCKER_HOST
+
+stages:
+  - deploy
+
+deploy-omv-srv1:
+  stage: deploy
+  tags:
+    - omv-srv1_runner
+  script:
+    - docker-compose up -d
+  only:
+    - master

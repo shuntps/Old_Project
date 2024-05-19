@@ -1,0 +1,15 @@
+stages:
+  - deploy
+
+deploy-traefik:
+  stage: deploy
+  tags:
+    - deb01-shellrun
+  script:
+    - docker-compose up -d --build
+  after_script:
+    - docker container prune -f
+    - docker volume prune -f
+    - docker image prune -a -f
+  only:
+    - master

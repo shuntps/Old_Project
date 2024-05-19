@@ -1,0 +1,102 @@
+# variables:
+#   DOCKER_TLS_CERTDIR: "/cert"
+
+stages:
+  # - build
+  - deploy
+
+# docker-build-master:
+#   image: tmaier/docker-compose
+#   stage: build
+#   services:
+#     - docker:dind
+#   tags:
+#     - omv-test-docker
+#   before_script:
+#     - docker login -u "$CI_REG_USERNAME" -p "$CI_REG_TOKEN" $CI_REGISTRY
+#   script:
+#     # - docker-compose build
+#     # - docker push $COMPOSE_TAG
+#     - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG$CI_COMMIT_SHORT_SHA .
+#     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG$CI_COMMIT_SHORT_SHA
+#   after_script:
+#     - docker logout $CI_REGISTRY
+#   only:
+#     - master
+
+# build-traefik:
+#   image: tmaier/docker-compose
+#   stage: build
+#   services:
+#     - docker:dind
+#   tags:
+#     - omv-test-docker
+#   before_script:
+#     - docker login -u "$CI_REG_USERNAME" -p "$CI_REG_TOKEN" $CI_REGISTRY
+#   script:
+#     - docker build -t $COMPOSE_TAG .
+#     - docker push $COMPOSE_TAG
+#   after_script:
+#     - docker logout $CI_REGISTRY
+#   only:
+#     - master
+  # when: 
+  #   manual
+
+# deploy-traefik:
+#   image: tmaier/docker-compose
+#   stage: deploy
+#   variables:
+#     MASTER_TAG: $CI_REGISTRY_IMAGE:master
+#   services:
+#     - docker:dind
+#   tags:
+#     - omv-test-docker
+#   before_script:
+#     - docker login -u "$CI_REG_USERNAME" -p "$CI_REG_TOKEN" $CI_REGISTRY
+#     - docker pull $COMPOSE_TAG
+#   script:
+#     - docker tag $COMPOSE_TAG $MASTER_TAG
+#     - docker push $MASTER_TAG
+#     - docker-compose up -d
+#   after_script:
+#     - docker logout $CI_REGISTRY
+#   only:
+#     - master
+  # when:
+  #   manual
+
+deploy-traefik:
+  image: tmaier/docker-compose
+  stage: deploy
+  variables:
+    # DOCKER_HOST: $DOCKER_HOST
+    # DOCKER_TLS_CERTDIR: ""
+    DOCKER_TLS_CERTDIR: "/cert"
+  services:
+    - docker:dind
+  tags:
+    - omv-test-docker
+  script:
+    - docker-compose up -d --build
+  only:
+    - master
+
+
+
+
+
+deploy-bitwarden:
+  image: debian
+  tags:
+    - omv-test-docker
+  before_script:
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - mkdir -p ~/.ssh
+    - eval $(ssh-agent -s)
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+    - ssh-add <(echo "$SSH_PRIVATE_KEY")
+  script:
+    - ssh $OMVTEST_SSH "docker image prune -a -f"
+    - ssh $OMVTEST_SSH "docker volume prune -f"
+    - ssh $OMVTEST_SSH "docker container prune -f"

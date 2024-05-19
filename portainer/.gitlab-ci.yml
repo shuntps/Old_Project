@@ -1,0 +1,28 @@
+stages:
+  - test
+  - deploy
+
+test-portainer:
+  image: tmaier/docker-compose
+  stage: test
+  tags:
+    - omv-srv2-docker
+  services:
+    - docker:dind
+  script:
+    - docker-compose up -d
+  only:
+    - master
+
+deploy-portainer:
+  image: tmaier/docker-compose
+  variables:
+    DOCKER_HOST: $OMV2_HOST
+    DOCKER_TLS_CERTDIR: ""
+  stage: deploy
+  tags:
+    - omv-srv2-docker
+  script:
+    - docker-compose up -d
+  only:
+    - master

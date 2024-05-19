@@ -1,0 +1,52 @@
+stages:
+  - build
+  - release
+  - deploy
+
+build-traefik:
+  image: tmaier/docker-compose
+  stage: build
+  services:
+    - docker:dind
+  tags:
+    - omv01-runner
+  before_script:
+    - docker login -u $DOCKER_LOGIN
+  script:
+    - docker build -t $TEST_IMAGE .
+    - docker push $TEST_IMAGE
+  only:
+    - master
+
+release-traefik:
+  image: tmaier/docker-compose
+  stage: release
+  services:
+    - docker:dind
+  tags:
+    - omv01-runner
+  before_script:
+    - docker login -u $DOCKER_LOGIN
+  script:
+    - docker pull $TEST_IMAGE
+    - docker tag $TEST_IMAGE $RELEASE_IMAGE
+    - docker push $RELEASE_IMAGE
+  only:
+    - master
+
+deploy-traefik:
+  stage: deploy
+  tags:
+    - omv01-shellrun
+  before_script:
+    - docker login -u $DOCKER_LOGIN
+    # - docker stop traefik
+    # - docker rm traefik -f
+  script:
+    - docker-compose up -d
+  after_script:
+    - docker container prune -f
+    - docker volume prune -f
+    - docker image prune -a -f
+  only:
+    - master

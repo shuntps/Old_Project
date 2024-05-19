@@ -1,0 +1,31 @@
+stages:
+  # - test
+  - deploy
+
+# test:
+#   image: tmaier/docker-compose
+#   stage: test
+#   variables:
+#     DOCKER_TLS_CERTDIR: "/cert"
+#   services:
+#     - docker:dind
+#   tags:
+#     - omv01-runner
+#   script:
+#     - docker --version
+#   only:
+#     - master
+
+deploy:
+  stage: deploy
+  tags:
+    - omv01-shellrun
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - echo "test"
+    - docker -v
+    - docker-compose -v
+    - sudo apt update
+  only:
+    - master

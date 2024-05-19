@@ -1,0 +1,20 @@
+version: "3.7"
+
+services:
+
+  vscode:
+    image: codercom/code-server:latest
+    container_name: vscode
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      PASSWORD: $VSCODE_PASSWORD
+      user: $PUID:$PGID
+      # user: "0"
+    volumes:
+      - $DOCKERDIR/appdata/vscode:/home/coder
+      - $DOCKERDIR:/home/coder/docker
+      - /data/git_project:/home/coder/git_project
+    ports:
+      - $VSCODE_PORT:8080

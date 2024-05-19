@@ -1,0 +1,117 @@
+version: "3.7"
+
+services:
+
+  traefik:
+    image: $RELEASE_IMAGE
+    container_name: traefik
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - TZ=$TZ
+    networks:
+      traefik:
+        ipv4_address: 192.168.90.254
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080 # to be removed
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - $OMV_DIR/appdata/traefik:/etc/traefik
+    command:
+      - --global.checkNewVersion=false
+      - --global.sendAnonymousUsage=false
+      - --api=true
+      - --api.insecure=true # to be removed
+      - --api.dashboard=true
+      - --log=true
+      - --log.level=DEBUG # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
+      - --accessLog=true
+      - --accessLog.filePath=/etc/traefik/logs/traefik.log
+      - --accessLog.bufferingSize=100
+      - --accessLog.filters.statusCodes=400-499
+      - --entrypoints.http.address=:80
+      - --entrypoints.https.address=:443
+      # - --entrypoints.https.http.tls.options=tls-opts@file
+      # - --entrypoints.https.http.tls.certresolver=dns-godaddy
+      # - --entrypoints.https.http.tls.domains[0].main=$DOMAINNAME
+      # - --entrypoints.https.http.tls.domains[0].sans=*.$DOMAINNAME
+      # - --entrypoints.https.forwardedHeaders.trustedIPs=$TRUSTEDIPS
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.endpoint=unix:///var/run/docker.sock
+      - --providers.docker.network=traefik
+      - --providers.docker.swarmMode=false
+      - --providers.file.directory=/etc/traefik/rules
+      - --providers.file.watch=true
+      #- --certificatesResolvers.dns-godaddy.acme.caServer=https://acme-staging-v02.api.letsencrypt.org/directory
+      # - --certificatesresolvers.dns-godaddy.acme.email=$GODADDY_EMAIL
+      # - --certificatesresolvers.dns-godaddy.acme.storage=/etc/traefik/acme/acme.json
+      # - --certificatesresolvers.dns-godaddy.acme.dnschallenge.provider=godaddy
+      # - --certificatesresolvers.dns-godaddy.acme.dnschallenge.resolvers=$GODADDY_DNS1,$GODADDY_DNS2
+      # - --certificatesResolvers.dns-godaddy.acme.dnsChallenge.delayBeforeCheck=90
+    # labels:
+    #   - traefik.enable=true
+    #   # HTTP Routers
+    #   - traefik.http.routers.traefik-rtr.entrypoints=https
+    #   - traefik.http.routers.traefik-rtr.rule=Host(`traefik.$DOMAINNAME`)
+    #   ## Services - API
+    #   - traefik.http.routers.traefik-rtr.service=api@internal
+    #   ## Middlewares
+    #   - traefik.http.routers.traefik-rtr.middlewares=chain-oauth@file
+    #   # Global redirection: http to https
+    #   - traefik.http.routers.http-catchall.rule=HostRegexp(`{host:(www\.)?.+}`)
+    #   - traefik.http.routers.http-catchall.entrypoints=http
+    #   - traefik.http.routers.http-catchall.middlewares=wwwtohttps
+    #   # Global redirection: https (www.) to https
+    #   - traefik.http.routers.wwwsecure-catchall.rule=HostRegexp(`{host:(www\.).+}`)
+    #   - traefik.http.routers.wwwsecure-catchall.entrypoints=https
+    #   - traefik.http.routers.wwwsecure-catchall.tls=true
+    #   - traefik.http.routers.wwwsecure-catchall.middlewares=wwwtohttps
+    #   # middleware: http(s)://(www.) to  https://
+    #   - traefik.http.middlewares.wwwtohttps.redirectregex.regex=^https?://(?:www\.)?(.+)
+    #   - traefik.http.middlewares.wwwtohttps.redirectregex.replacement=https://$${1}
+    #   - traefik.http.middlewares.wwwtohttps.redirectregex.permanent=true
+
+  # oauth:
+  #   image: thomseddon/traefik-forward-auth:latest
+  #   container_name: oauth
+  #   restart: always
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   environment:
+  #     - CLIENT_ID=$GOOGLE_CLIENT_ID
+  #     - CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
+  #     - SECRET=$OAUTH_SECRET
+  #     - COOKIE_DOMAIN=$DOMAINNAME
+  #     - INSECURE_COOKIE=false
+  #     - AUTH_HOST=oauth.$DOMAINNAME
+  #     - URL_PATH=/_oauth
+  #     - WHITELIST=$MY_EMAIL
+  #     - LOG_LEVEL=info
+  #     - LOG_FORMAT=text
+  #     - LIFETIME=86400 # 1 day
+  #     - DEFAULT_ACTION=auth
+  #     - DEFAULT_PROVIDER=google
+  #   networks:
+  #     - traefik
+  #   labels:
+  #     - traefik.enable=true
+  #     ## HTTP Routers
+  #     - traefik.http.routers.oauth-rtr.entrypoints=https
+  #     - traefik.http.routers.oauth-rtr.rule=Host(`oauth.$DOMAINNAME`)
+  #     ## Middlewares
+  #     - traefik.http.routers.oauth-rtr.middlewares=chain-oauth@file
+  #     ## HTTP Services
+  #     - traefik.http.routers.oauth-rtr.service=oauth-svc
+  #     - traefik.http.services.oauth-svc.loadbalancer.server.port=4181
+
+networks:
+  traefik:
+    name: traefik
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.90.0/24

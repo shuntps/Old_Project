@@ -1,0 +1,21 @@
+# variables:
+#   GITDIR:
+#   CI_PROJECT_NAME:
+
+stages:
+  - deploy
+
+deploy:
+  stage: deploy
+
+  tags:
+    - omv-srv2_shellrun
+  before_script:
+    ### Prepare Traefik
+    - chmod +x $GITDIR/$CI_PROJECT_NAME/traefik/config.sh && $GITDIR/$CI_PROJECT_NAME/traefik/config.sh
+  script:
+    - docker-compose up -d
+  only:
+    - master
+
+  when: manual
